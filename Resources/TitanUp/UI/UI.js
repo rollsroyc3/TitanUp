@@ -52,6 +52,22 @@ UI.createSimplePicker = function (params)
 	return new SimplePicker (params);
 }
 
+UI.createDatePicker = function (params)
+{
+	var DatePicker = require ('/TitanUp/UI/Views/DatePicker');
+	DatePicker.TUInit (TU);
+	
+	return new DatePicker (params);
+}
+
+UI.createToast = function (params)
+{
+	var Toast = require ('/TitanUp/UI/Views/Toast');
+	Toast.TUInit (TU);
+	
+	return new Toast (params);
+}
+
 UI.createManagedMapView = function ()
 {
 	var ManagedMapView = require ('/TitanUp/UI/Views/ManagedMapView');
