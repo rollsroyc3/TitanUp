@@ -35,7 +35,8 @@ function PickerPopup(title, value, type, maxDate) {
 
 	var _picker_view = Titanium.UI.createView({
 		height : 251,
-		bottom : -251
+		bottom : -251,
+		width : Ti.UI.SIZE
 	});
 
 	_btnCancel = Ti.UI.createButton({
@@ -54,32 +55,30 @@ function PickerPopup(title, value, type, maxDate) {
 
 	_toolbar = Ti.UI.iOS.createToolbar({
 		top : 0,
+		width : 320,
 		items : [_btnCancel, _spacer, _btnDone],
 		barColor : '#6c6c6c'
-		// items : [_btnCancel, spacer, _btnDone],
-		// backgroundColor : '#777',
-		// borderTop : false,
-		// borderBottom : true
 	});
 
 	var _picker = Titanium.UI.createPicker({
 		top : 43,
-		type : ( _type ? _type : Ti.UI.PICKER_TYPE_DATE),
+		type : _type,
+		//type : ( _type ? _type : Ti.UI.PICKER_TYPE_DATE),
 		selectionIndicator : true
 	});
+
 	if (_maxDate) {
 		_picker.maxDate = _maxDate;
 	}
 	_picker.addEventListener("change", function(e) {
-		//alert(e);
 		_self.xsetValue(e.value);
 	});
 
-	_picker_view.slideIn = function() {
-		_picker_view.animate(_slide_in);
+	_picker_view.slideIn = function(callback) {
+		_picker_view.animate(_slide_in, callback());
 	}
-	_picker_view.slideOut = function() {
-		_picker_view.animate(_slide_out);
+	_picker_view.slideOut = function(callback) {
+		_picker_view.animate(_slide_out, callback());
 	}
 
 	_picker_view.add(_toolbar);
@@ -87,20 +86,24 @@ function PickerPopup(title, value, type, maxDate) {
 	_self.add(_picker_view);
 
 	_btnCancel.addEventListener('click', function() {
-		_picker_view.slideOut();
-		_self.close();
+		_picker_view.slideOut(function() {
+			_self.close();
+		});
 	});
 
 	_btnDone.addEventListener('click', function(e) {
-		_picker_view.slideOut();
 		_self.fireEvent('done', {
 			value : _value
+		});
+		_picker_view.slideOut(function() {
+			_self.close();
 		});
 		_self.close();
 	});
 
 	_self.addEventListener('open', function() {
-		_picker_view.slideIn();
+		_picker_view.slideIn(function() {
+		});
 	});
 
 	_self.xsetValue = function(value) {
@@ -156,8 +159,8 @@ function DatePicker(params) {
 		}
 		Ti.API.debug('[DatePicker] newparams: ' + JSON.stringify(newparams));
 		//_dateFormat
-		//alert(_dateFormat);// (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, 'mediumDate') : _value);
-		newparams.title = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, 'mediumDate') : _value);
+		//alert(_dateFormat);// (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, _dateFormat) : _value);
+		newparams.title = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, _dateFormat) : _value);
 		_self = Ti.UI.createButton(newparams);
 		_self.addEventListener('click', function() {
 			var _datepicker = Ti.UI.createPicker(params);
@@ -170,9 +173,9 @@ function DatePicker(params) {
 			_ppopup.buttonNames = ['Done', 'Cancel'];
 			_ppopup.addEventListener('click', function(e) {
 				if (e.index === 0) {
-					_value = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_datepicker.value, 'mediumDate') : _datepicker.value);
+					_value = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_datepicker.value, _dateFormat) : _datepicker.value);
 					_self.title = _value.toString();
-					
+
 					_self.fireEvent('TUchange', {
 						value : _value
 					});
@@ -212,7 +215,7 @@ function DatePicker(params) {
 			top : 8,
 			color : newparams.color,
 			font : newparams.font,
-			text : (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, 'mediumDate') : _value)
+			text : (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(_value, _dateFormat) : _value)
 		};
 
 		_label = Ti.UI.createLabel(labelparams);
@@ -234,11 +237,13 @@ function DatePicker(params) {
 				if (e.value == _value) {
 					return;
 				}
-					
-				_value = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(e.value, 'mediumDate') : e.value);
+				//_value = e.value;
+				_value = (_type == Ti.UI.PICKER_TYPE_DATE && _dateFormat ? dateFormat(e.value, _dateFormat) : e.value);
 				_label.text = _value;
-
-				_self.fireEvent('TUchange', _value);
+				
+				_self.fireEvent('TUchange', {
+					value : _value
+				});
 			});
 
 			_ppopup.xsetValue(_value);
@@ -247,19 +252,18 @@ function DatePicker(params) {
 		});
 	}
 
-	// _self.xgetValue = function() {
-	// return _value;
-	// };
-	//
-	// _self.xsetValue = function(value) {
-	//
-	// _value = value;
-	// if (TU.Device.getOS() == 'android') {
-	// _self.setSelectedRow(0, i, false);
-	// } else {
-	// _label.text = _value;
-	// }
-	// }
+	_self.xgetValue = function() {
+		return _value;
+	};
+
+	_self.xsetValue = function(value) {
+		_value = value;
+		if (TU.Device.getOS() == 'android') {
+			_self.setSelectedRow(0, i, false);
+		} else {
+			_label.text = _value;
+		}
+	}
 	// }
 	// };
 
@@ -374,4 +378,4 @@ dateFormat.masks = {
 dateFormat.i18n = {
 	dayNames : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 	monthNames : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-}; 
+};
